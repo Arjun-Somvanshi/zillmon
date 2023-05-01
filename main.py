@@ -1,7 +1,10 @@
+#!/bin/python3
+
 import json
 import requests
 import os
 import telebot
+import threading
 import time
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -100,5 +103,6 @@ def start_monitoring():
     bot.send_message(zill.config["chat_id"], f"Monitoring Validator: {zill.config['vald_url']}")
     zill.monitor()
 
-start_monitoring()
+monitorThread = threading.Thread(target=start_monitoring)
+monitorThread.start()
 bot.infinity_polling()
