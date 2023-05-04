@@ -8,9 +8,9 @@ User=ubuntu
 Group=ubuntu
 Type=simple
 Restart=on-failure
-ExecStart=/home/ubuntu/.local/bin/pipenv run python main.py
+WorkingDirectory=/home/ubuntu/zillmon
+ExecStart=/home/ubuntu/.local/bin/pipenv run python /home/ubuntu/zillmon/main.py
 SyslogIdentifier=zillmon
-LogLevel=info
 
 [Install]
 WantedBy=multi-user.target

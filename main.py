@@ -63,8 +63,9 @@ class zillmon:
                               Validator Height: {self.blockchain_info_vald["NumDSBlocks"]}
                               Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}
                               ''')
-        logging.error(f'''Block Height of Zilliqa Validator is Lagging''')
-        logging.error(f''' Validator Height: {self.blockchain_info_vald["NumDSBlocks"]} Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}''')
+            logging.error(f'''Block Height of Zilliqa Validator is Lagging''')
+            logging.error(f''' Validator Height: {self.blockchain_info_vald["NumDSBlocks"]} Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}''')
+        logging.info(f''' Validator Height: {self.blockchain_info_vald["NumDSBlocks"]} Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}''')
 
     def alert_DeficitPeers(self):
         if int(self.blockchain_info_vald["NumPeers"]) < int(self.blockchain_info_remote["NumPeers"]) - 10:
@@ -72,8 +73,9 @@ class zillmon:
                               Validator Peers: {self.blockchain_info_vald["NumPeers"]}
                               Remote Peers: {self.blockchain_info_remote["NumPeers"]}
                               ''')
-        logging.error(f'''Deficit Peers for Zilliqa Validator''')
-        logging.error(f'''Validator Peers: {self.blockchain_info_vald["NumPeers"]} Remote Node Peers: {self.blockchain_info_remote["NumPeers"]}''')
+            logging.error(f'''Deficit Peers for Zilliqa Validator''')
+            logging.error(f'''Validator Peers: {self.blockchain_info_vald["NumPeers"]} Remote Node Peers: {self.blockchain_info_remote["NumPeers"]}''')
+        logging.info(f'''Validator Peers: {self.blockchain_info_vald["NumPeers"]} Remote Node Peers: {self.blockchain_info_remote["NumPeers"]}''')
 
     def monitor(self):
         while True:
@@ -111,4 +113,8 @@ def start_monitoring():
 
 monitorThread = threading.Thread(target=start_monitoring)
 monitorThread.start()
-bot.infinity_polling()
+try:
+    bot.infinity_polling()
+except Exception as e:
+    logging.error("Infinity Polling Error")
+    logging.error(str(e))
