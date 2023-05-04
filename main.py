@@ -33,13 +33,13 @@ class zillmon:
             r = requests.post(url, data=data, headers=headers)
             return json.loads(r.text)
         except Exception as e:
-            print(f"There was an issue with the rpc call, check if {url} is up")
-            print(e)
+            logging.error(f"There was an issue with the rpc call, check if {url} is up")
+            logging.error(str(e))
             if counter < 4:
                 time.sleep((counter + 1)*2)
                 return self.rpc_call(url, data, counter + 1)
             else:
-                print("Retried 5 times... Error Occured in RPC call")
+                logging.error("Retried 5 times... Error Occured in RPC call")
                 self.error_url = url
                 return {"result": "RPC Failure"}
 
@@ -81,7 +81,7 @@ class zillmon:
                 self.alert_BlockNum()
                 self.alert_DeficitPeers()
             else:
-                print("One monitor cycle has failed due to RPC Error")
+                logging.error("One monitor cycle has failed due to RPC Error")
                 bot.send_message(self.config["chat_id"], f'RPC Error the following url is down: {self.error_url}')
             time.sleep(120)
 
