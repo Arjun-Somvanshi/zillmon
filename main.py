@@ -26,11 +26,22 @@ class zillmon:
             logging.warning("User Config is missing: %s", str(e))
             logging.info("Loading default config...")
 
-    def rpc_call(self, url, data):
+    def rpc_call(self, url, data, counter=0):
         headers = {"Content-Type": "application/json"}
         data = json.dumps(data)
-        r = requests.post(url, data=data, headers=headers)
-        return json.loads(r.text)
+        try:
+            r = requests.post(url, data=data, headers=headers)
+            return json.loads(r.text)
+        except Exception as e:
+            print(f"There was an issue with the rpc call, check if {url} is up")
+            print(e)
+            if counter < 4:
+                time.sleep((counter + 1)*2)
+                return self.rpc_call(url, data, counter + 1)
+            else:
+                print("Retried 5 times... Error Occured in RPC call")
+                self.error_url = url
+                return {"result": "RPC Failure"}
 
     def get_blockchain_info(self):
         data = {
@@ -40,18 +51,11 @@ class zillmon:
                 "params": [""]
                }
         self.blockchain_info_vald = self.rpc_call(self.config["vald_url"], data)["result"]
-        self.blockchain_info_remote = []
         self.blockchain_info_remote = self.rpc_call(self.config["remote_url"], data)["result"]
-
-    def get_current_ds_block(self):
-        data = {
-                "id": "1",
-                "jsonrpc": "2.0",
-                "method": "GetDsBlock",
-                "params": ["9000"]
-               }
-        self.current_ds_block_vald = self.rpc_call(self.config["vald_url"], data)["result"]
-        self.current_ds_block_remote = self.rpc_call(self.config["remote_url"], data)["result"]
+        if self.blockchain_info_vald != "RPC Failure" and self.blockchain_info_remote != "RPC Failure":
+            return True
+        else:
+            return False
 
     def alert_BlockNum(self):
         if int(self.blockchain_info_vald["NumDSBlocks"]) < int(self.blockchain_info_remote["NumDSBlocks"]) - 50:
@@ -73,9 +77,12 @@ class zillmon:
 
     def monitor(self):
         while True:
-            self.get_blockchain_info()
-            self.alert_BlockNum()
-            self.alert_DeficitPeers()
+            if self.get_blockchain_info():
+                self.alert_BlockNum()
+                self.alert_DeficitPeers()
+            else:
+                print("One monitor cycle has failed due to RPC Error")
+                bot.send_message(self.config["chat_id"], f'RPC Error the following url is down: {self.error_url}')
             time.sleep(120)
 
 
@@ -99,7 +106,7 @@ def send_remote_status(message):
     bot.reply_to(message, "Remote Node Status: \n" + str(zill.blockchain_info_remote))
 
 def start_monitoring():
-    bot.send_message(zill.config["chat_id"], f"Monitoring Validator: {zill.config['vald_url']}")
+    #bot.send_message(zill.config["chat_id"], f"Monitoring Validator: {zill.config['vald_url']}")
     zill.monitor()
 
 monitorThread = threading.Thread(target=start_monitoring)
