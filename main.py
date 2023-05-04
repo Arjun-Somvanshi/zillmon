@@ -6,6 +6,9 @@ import os
 import telebot
 import threading
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s [zillmon]: %(message)s')
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -20,8 +23,8 @@ class zillmon:
                            "remote_url": "https://api.zilliqa.com/",
                            "chat_id": -845793348
                           }
-            print(f"Error: {e}")
-            print("Loading default config...")
+            logging.warning("User Config is missing: %s", str(e))
+            logging.info("Loading default config...")
 
     def rpc_call(self, url, data):
         headers = {"Content-Type": "application/json"}
@@ -56,10 +59,8 @@ class zillmon:
                               Validator Height: {self.blockchain_info_vald["NumDSBlocks"]}
                               Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}
                               ''')
-        print(f'''Block Height of Zilliqa Validator is Lagging\n
-                          Validator Height: {self.blockchain_info_vald["NumDSBlocks"]}
-                          Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}
-                          ''')
+        logging.error(f'''Block Height of Zilliqa Validator is Lagging''')
+        logging.error(f''' Validator Height: {self.blockchain_info_vald["NumDSBlocks"]} Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}''')
 
     def alert_DeficitPeers(self):
         if int(self.blockchain_info_vald["NumPeers"]) < int(self.blockchain_info_remote["NumPeers"]) - 10:
@@ -67,10 +68,8 @@ class zillmon:
                               Validator Peers: {self.blockchain_info_vald["NumPeers"]}
                               Remote Peers: {self.blockchain_info_remote["NumPeers"]}
                               ''')
-        print(f'''Deficit Peers Zilliqa Validator is Lagging\n
-                          Validator Peers: {self.blockchain_info_vald["NumPeers"]}
-                          Remote Node Peers: {self.blockchain_info_remote["NumPeers"]}
-                          ''')
+        logging.error(f'''Deficit Peers for Zilliqa Validator''')
+        logging.error(f'''Validator Peers: {self.blockchain_info_vald["NumPeers"]} Remote Node Peers: {self.blockchain_info_remote["NumPeers"]}''')
 
     def monitor(self):
         while True:

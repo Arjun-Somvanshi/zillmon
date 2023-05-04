@@ -9,5 +9,8 @@ Group=ubuntu
 Type=simple
 Restart=on-failure
 ExecStart=/home/ubuntu/.local/bin/pipenv run python main.py
+SyslogIdentifier=zillmon
+LogLevel=info
+
 [Install]
 WantedBy=multi-user.target
