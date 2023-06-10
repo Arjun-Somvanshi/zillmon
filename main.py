@@ -13,6 +13,22 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s [zillm
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
+telebot.apihelper.READ_TIMEOUT = 5
+
+def send_msg(text, id):
+    try:
+        bot.send_message(id, text)
+    except Exception as e:
+        logging.info(e)
+        send_msg(text, id)
+
+def reply(message, text):
+    try:
+        bot.reply_to(message, text)
+    except Exception as e:
+        logging.info(e)
+        reply(message, text)
+
 class zillmon:
     def read_config(self):
         try:
@@ -59,7 +75,7 @@ class zillmon:
 
     def alert_BlockNum(self):
         if int(self.blockchain_info_vald["NumDSBlocks"]) < int(self.blockchain_info_remote["NumDSBlocks"]) - 50:
-            bot.send_message(self.config["chat_id"], f'''Block Height of Zilliqa Validator is Lagging\n
+            send_msg(self.config["chat_id"], f'''Block Height of Zilliqa Validator is Lagging\n
                               Validator Height: {self.blockchain_info_vald["NumDSBlocks"]}
                               Remote Node Height: {self.blockchain_info_remote["NumDSBlocks"]}
                               ''')
@@ -69,7 +85,7 @@ class zillmon:
 
     def alert_DeficitPeers(self):
         if int(self.blockchain_info_vald["NumPeers"]) < int(self.blockchain_info_remote["NumPeers"]) - 10:
-            bot.send_message(self.config["chat_id"], f'''Deficit Peers Zilliqa Validator is Lagging\n
+            send_msg(self.config["chat_id"], f'''Deficit Peers Zilliqa Validator is Lagging\n
                               Validator Peers: {self.blockchain_info_vald["NumPeers"]}
                               Remote Peers: {self.blockchain_info_remote["NumPeers"]}
                               ''')
@@ -82,17 +98,19 @@ class zillmon:
             if self.get_blockchain_info():
                 self.alert_BlockNum()
                 self.alert_DeficitPeers()
+                logging.info("Successful monitor cycle")
             else:
                 logging.error("One monitor cycle has failed due to RPC Error")
-                bot.send_message(self.config["chat_id"], f'RPC Error the following url is down: {self.error_url}')
+                send_msg(self.config["chat_id"], f'RPC Error the following url is down: {self.error_url}')
             time.sleep(120)
 
 
 zill = zillmon()
 zill.read_config()
+
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
-    bot.reply_to(message, """\
+    reply(message, """\
 Hi there, I am Zillmon. 
 I am here to monitor you Zilliqa Validator node
 """)
@@ -100,15 +118,15 @@ I am here to monitor you Zilliqa Validator node
 @bot.message_handler(commands=['status'])
 def send_status(message):
     zill.get_blockchain_info()
-    bot.reply_to(message, "Validator Status: \n" + str(zill.blockchain_info_vald))
+    reply(message, "Validator Status: \n" + str(zill.blockchain_info_vald))
 
 @bot.message_handler(commands=['rstatus'])
 def send_remote_status(message):
     zill.get_blockchain_info()
-    bot.reply_to(message, "Remote Node Status: \n" + str(zill.blockchain_info_remote))
+    reply(message, "Remote Node Status: \n" + str(zill.blockchain_info_remote))
 
 def start_monitoring():
-    #bot.send_message(zill.config["chat_id"], f"Monitoring Validator: {zill.config['vald_url']}")
+    bot.send_message(zill.config["chat_id"], f"Monitoring Validator: {zill.config['vald_url']}")
     zill.monitor()
 
 monitorThread = threading.Thread(target=start_monitoring)
@@ -117,4 +135,5 @@ try:
     bot.infinity_polling()
 except Exception as e:
     logging.error("Infinity Polling Error")
+    bot.send_message(zill.config["chat_id"], f"Infinity Polling error: Restart the service")
     logging.error(str(e))
